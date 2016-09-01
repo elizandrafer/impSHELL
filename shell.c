@@ -3,38 +3,57 @@
 #include <dirent.h>
 #include <unistd.h>
 #include <string.h>
+#include <pwd.h>
+#include <string.h>
+#define flag 1
 
-/*
-int command_LS(char **args){
-	char dir[100];
-	char *cp;
+char *redIO[6] = {">", "<", ">>", "<<", "|", "tee"};
 
-	if(args[1]==NULL){
-		cp = getcwd(dir, 100);
-		if(cp!=NULL) printf("DIR >> %s", dir);
-	}
-}
-*/
-
-void command_LS() {
+void command_LS(char arg[]) {
 	char dir[100];
 	DIR *d;
 	struct dirent *di;
-	
+	printf("aquixx\n");
+	//printf("%s\n", arg);
 
-	if(getcwd(dir, 100) != NULL){
-		printf("DIR >> %s \n", dir);
-		d = opendir(dir);
-		if(d){
-			printf("Itens do diretorio ...");
-			while((di = readdir(d)) != NULL){
-				printf("%s \n", di->d_name);
-			}
-		}
+	if(arg==NULL){	//nao esta funcionando >> segmentation fault
+		if(getcwd(dir, 100) != NULL) d = opendir(dir);
+		else perror("getcwd error");
 
 	}else{
-		perror(" getcwd error");
+		arg[strlen(arg)-1]='\0';
+
+		//diretorio corrente
+		if(!strcmp(arg, "./")){
+			if(getcwd(dir, 100) != NULL) d = opendir(dir);
+			else perror("getcwd error");
+
+		//diretorio home
+		}else if(!strcmp(arg, "~")){
+			struct passwd *passE = getpwuid(getuid());
+			strcpy(dir, passE->pw_dir);
+			d = opendir(dir);
+
+		//diretorio acima
+		}else if(!strcmp(arg, "..")){
+			if(getcwd(dir, 100) != NULL){
+				*(strrchr(dir, '/') + 1) = 0;
+				d = opendir(dir);
+			}else perror("getcwd error");
+		}
+	} 
+
+
+
+	printf("DIR >> %s \n", dir);
+
+	if(d){
+		printf("Itens do diretorio ...\n");
+		while((di = readdir(d)) != NULL){
+			printf("%s \n", di->d_name);
+		}
 	}
+
 }
 void command_RNM(char comando[]) {
 	char *str;
@@ -185,6 +204,7 @@ void command_COPY(char comando[]) {
 }
 
 void command_EXIT() {
+	printf("Tchau querida!\n");
 	exit(0);
 }
 
@@ -196,7 +216,7 @@ void exec_command(char comando[]) {
 	printf("%s\n", str);
 	if(str != NULL){
 		if (!strcmp(str,"ls")) { // strcmp retorna 0 se as strings são iguais e 1 caso contrário, por isso a lógica é inversa
-			command_LS();
+			command_LS("./");
 		}
 		else if (!strcmp(str,"rnm")) {
 			command_RNM(comando);
@@ -211,21 +231,41 @@ void exec_command(char comando[]) {
 	}
 }
 
+void readCommand(char linhaComando[]){
+
+	char *str, *argumento;
+	argumento = strrchr(linhaComando, ' ')+1;			//pega depois 
+	str = strtok(linhaComando, " \n");					//pega antes
+	//tratar dentro das funcoes argumento==NULL
+
+	if(str != NULL){
+
+		if(!strcmp(str, "ls")){
+			command_LS(argumento);
+		}else if(!strcmp(str, "rnm")){
+			command_RNM(argumento);
+		}else if(!strcmp(str, "cp")){
+			command_COPY(argumento);
+		}else if(!strcmp(str, "rmv")){
+			command_RMV(argumento);
+		}else if(!strcmp(str, "exit")){
+			command_EXIT();
+		}else{
+			printf("Comando não existe\n");
+		}
+	}
+
+
+}
+
 int main() {
-	char dir[100], comando[100], comando_copia[100], *str;
-	DIR *d;
 
-	printf("> ");
-	gets(comando);
-	// strcpy(comando, "ls -al -al -al");
+	char linhaComando[100], *str;
 
-	strcpy(comando_copia,comando);
-
-	str = strtok(comando_copia, "|");
-	while(str != NULL){
-		printf("%s.\n", str);
-		exec_command (str);
-		str = strtok(NULL, "|");
+	while(flag){
+		printf("> ");
+		fgets(linhaComando, 100, stdin);
+		readCommand(linhaComando);
 	}
 
 	return 0;

@@ -1,0 +1,27 @@
+---------
+
+copiar			ok
+renomear		ok
+remover			ok
+autocomplete
+> < >> << | tee		-- redirecionamento I/O
+cd
+pwd
+exit
+./ .. ~			quase
+listar diretorio	ok 
+
+---------
+
+a) Interpretacao
+- comandos
+- argumentos
+
+b) Execucao
+- disparar processos
+- arquivo log: 
+	$ comandos executados
+	$ chamadas programas
+
+comando argumento1 argumento2 ... argumenton
+
