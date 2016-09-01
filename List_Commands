@@ -8,7 +8,7 @@ autocomplete
 cd
 pwd
 exit
-./ .. ~			quase
+./ .. ~			ok
 listar diretorio	ok 
 
 ---------

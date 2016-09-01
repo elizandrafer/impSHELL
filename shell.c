@@ -14,9 +14,8 @@ void command_LS(char arg[]) {
 	DIR *d;
 	struct dirent *di;
 	printf("aquixx\n");
-	//printf("%s\n", arg);
 
-	if(arg==NULL){	//nao esta funcionando >> segmentation fault
+	if(arg==NULL){	
 		if(getcwd(dir, 100) != NULL) d = opendir(dir);
 		else perror("getcwd error");
 
@@ -233,9 +232,10 @@ void exec_command(char comando[]) {
 
 void readCommand(char linhaComando[]){
 
-	char *str, *argumento;
-	argumento = strrchr(linhaComando, ' ')+1;			//pega depois 
-	str = strtok(linhaComando, " \n");					//pega antes
+	char *str, *argumento=NULL;
+	argumento = strrchr(linhaComando, ' ');							//pega a partir 
+	if(argumento!=NULL) argumento = strrchr(linhaComando, ' ')+1;	//pega depois
+	str = strtok(linhaComando, " \n");								//pega antes
 	//tratar dentro das funcoes argumento==NULL
 
 	if(str != NULL){
