@@ -5,9 +5,34 @@
 #include <string.h>
 #include <pwd.h>
 #include <string.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #define flag 1
 
-char *redIO[6] = {">", "<", ">>", "<<", "|", "tee"};
+char *redIO[6] = {"<", "<<", ">", ">>", "|", "tee"};
+
+void redirectionINPUT(char *argIN, char *command){
+	
+	int i=0, in, out;
+
+	while(strcmp(redIO[i], command) && i!=6) i++;
+	in = open(argIN, O_RDONLY);
+	dup2(in, 0);
+	close(in);
+
+	//execCommand();
+
+}
+
+void redirectionOUTPUT(char *argOUT, char *command){
+
+	int i=0, in, out;
+
+	while(strcmp(redIO[i], command) && i!=6) i++;
+	out = open(argOUT, O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IRGRP | S_IWGRP | S_IWUSR);
+
+}
 
 void command_LS(char arg[]) {
 	char dir[100];
@@ -230,6 +255,16 @@ void exec_command(char comando[]) {
 	}
 }
 
+void parseLine(char *linha, char **argv){
+
+    while(*linha != '\0'){      													   
+        while (*linha == ' ' || *linha == '\t' || *linha == '\n') *linha++ = '\0';     
+        *argv++ = linha;          													   
+        while (*linha != '\0' && *linha != ' ' && *linha != '\t' && *linha != '\n') linha++;
+    }
+    *argv = '\0';                 														
+}
+
 void readCommand(char linhaComando[]){
 
 	char *str, *argumento=NULL;
@@ -255,17 +290,36 @@ void readCommand(char linhaComando[]){
 		}
 	}
 
+}
+     
+void execCommand(char **argv){
+
+	int status;
+	pid_t pid = fork();
+
+    if(pid < 0){     								
+          printf("ERRO: Chamada processo filho falhou!\n");
+          exit(1);
+    }else if (pid == 0){          
+        if(execvp(*argv, argv) < 0) {  
+        	printf("ERRO: Execucao falhou!\n");
+            exit(1);
+        }
+    }else{                                  
+          while (wait(&status) != pid)  ;
+    }
 
 }
 
 int main() {
 
-	char linhaComando[100], *str;
+	char linhaComando[1024], *argv[64], *str;
 
 	while(flag){
 		printf("> ");
-		fgets(linhaComando, 100, stdin);
-		readCommand(linhaComando);
+		fgets(linhaComando, 1014, stdin);
+		parseLine(linhaComando, argv);
+		readCommand(argv);
 	}
 
 	return 0;

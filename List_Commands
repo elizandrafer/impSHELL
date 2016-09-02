@@ -7,7 +7,7 @@ autocomplete
 > < >> << | tee		-- redirecionamento I/O
 cd
 pwd
-exit
+exit			
 ./ .. ~			ok
 listar diretorio	ok 
 
