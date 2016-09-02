@@ -5,6 +5,7 @@
 #include <string.h>
 #include <pwd.h>
 #include <string.h>
+#include <sys/wait.h>
 #define flag 1
 
 char *redIO[6] = {">", "<", ">>", "<<", "|", "tee"};
@@ -227,11 +228,15 @@ void readCommand(char commandLine[]){
 	args = strchr(commandLine, ' ');			//pega a partir 
 	if(args!=NULL) {
 		args +=1;	//pega depois
+		if (strlen(args)==0) {
+			args = NULL;
+		}
 	}
 	str = strtok(commandLine, " \n");						//pega antes
 	//tratar dentro das funcoes argumento==NULL
 
 	if(str != NULL){
+		printf(".%s.\n", args);
 		if(!strcmp(str, "ls")){
 			command_LS(args);
 		}else if(!strcmp(str, "rnm")){
@@ -248,7 +253,17 @@ void readCommand(char commandLine[]){
 	}
 }
 
-int call_command(char *command, int input; int first, int last) {
+char *remove_spaces_at_begin(char *str) {
+	while (*str == ' ') {
+		++str;
+		printf("Entrei\n");
+	}
+	return str;
+}
+
+int call_command(char *command, int input, int first, int last) {
+	command = remove_spaces_at_begin(command);
+	printf("command: .%s.\n", command);
 	readCommand(command);
 }
 
@@ -280,7 +295,7 @@ void cleanup(int n) {
 int main() {
 
 	char linhaComando[1024], *command, *next=NULL;
-	int first, last;
+	int input, first, last;
 
 	while(flag){
 		printf("> ");
@@ -294,8 +309,8 @@ int main() {
 		next = strchr(command, '|');
 
 		while (next != NULL) {
-			next = '\0';
-			input = call_command(command, input, fist, last);
+			*next = '\0';
+			input = call_command(command, input, first, last);
 			command = next+1;
 			next = strchr(command, '|');
 			first = 0;
