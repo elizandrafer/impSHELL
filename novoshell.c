@@ -163,8 +163,12 @@ void command_PWD(char **arg){
 
 }
 
+void command_CAT(char **args){
+
+}
+
 void command_EXIT() {
-	
+
 	printf("Tchau querida!\n"); exit(0);
 }
 
