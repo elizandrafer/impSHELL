@@ -4,11 +4,12 @@ copiar			ok
 renomear		ok
 remover			ok
 autocomplete
-> < >> << | tee		-- redirecionamento I/O
+> < >> 			ok	-- redirecionamento I/O
+<< | tee			-- redirecionamento I/O
 cd
 pwd
 exit			
-./ .. ~			ok
+./ .. ~			ok	-- redirecionamento DIR
 listar diretorio	ok 
 
 ---------
@@ -23,5 +24,20 @@ b) Execucao
 	$ comandos executados
 	$ chamadas programas
 
-comando argumento1 argumento2 ... argumenton
+----------
 
+SINTAXE COMANDOS
+
+ls
+ls > arquivo
+ls >> arquivo
+ls ./
+ls DIR
+ls .. > arquivo
+ls home >> arquivo
+
+
+cp arquivoOrigem arquivoCopia
+rnm arquivoAtual arquivoNovo
+rmv arquivo
+ 
