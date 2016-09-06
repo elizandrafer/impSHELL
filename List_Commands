@@ -6,11 +6,17 @@ remover			ok
 autocomplete
 > < >> 			ok	-- redirecionamento I/O
 << | tee			-- redirecionamento I/O
-cd
-pwd
-exit			
+cd			ok
+pwd			ok
+exit			ok	
 ./ .. ~			ok	-- redirecionamento DIR
 listar diretorio	ok 
+cat ??
+
+---------
+
+INTERFACE
+Tratamento ERROS/EXCECOES
 
 ---------
 
@@ -36,6 +42,14 @@ ls DIR
 ls .. > arquivo
 ls home >> arquivo
 
+cd
+cd DIR
+cd ..
+cd ~
+
+pwd 
+pwd > arquivo
+pwd >> arquivo
 
 cp arquivoOrigem arquivoCopia
 rnm arquivoAtual arquivoNovo
