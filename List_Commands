@@ -3,7 +3,7 @@
 copiar			ok
 renomear		ok
 remover			ok
-autocomplete
+autocomplete		ok	
 > < >> 			ok	-- redirecionamento I/O
 << | tee			-- redirecionamento I/O
 cd			ok
@@ -11,11 +11,11 @@ pwd			ok
 exit			ok	
 ./ .. ~			ok	-- redirecionamento DIR
 listar diretorio	ok 
-cat ??
+cat 			
 
 ---------
 
-INTERFACE
+Interface
 Tratamento ERROS/EXCECOES
 
 ---------
@@ -25,8 +25,8 @@ a) Interpretacao
 - argumentos
 
 b) Execucao
-- disparar processos
-- arquivo log: 
+- disparar processos	(vou fazer)
+- arquivo log: 		(tambem)
 	$ comandos executados
 	$ chamadas programas
 
@@ -50,6 +50,14 @@ cd ~
 pwd 
 pwd > arquivo
 pwd >> arquivo
+
+cat
+cat > file
+cat >> file
+cat arquivo
+cat arquivo > file
+cat arquivo >> file
+
 
 cp arquivoOrigem arquivoCopia
 rnm arquivoAtual arquivoNovo
