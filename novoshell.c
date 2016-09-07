@@ -11,6 +11,8 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <limits.h>
+#include <readline/readline.h>
+#include <readline/history.h>
 
 #define flag 1
 int in, out;
@@ -91,7 +93,7 @@ void redirectionIO(char *command, char *arg){
 void redirectionDIR(char *diretorio, char dir[]){
 
 	//diretorio corrente
-	if( (*diretorio == '\0') || (!strcmp(diretorio, "./")) ){
+	if( (diretorio == '\0') || (!strcmp(diretorio, "./")) ){
 		if(getcwd(dir, 100) == NULL){ perror("getcwd error"); }
 
 	//diretorio home
@@ -121,11 +123,11 @@ void command_LS(char **arg) {
 	while(arg[len]!='\0'){len++;}
  
 	switch(len){
-		case 4: 
+		case 3: 
 			redirectionIO(arg[1], arg[2]);
 			redirectionDIR(arg[0], dir);
 		break;
-		case 3:
+		case 2:
 			redirectionIO(arg[0], arg[1]);
 			redirectionDIR("./", dir);
 		break;
@@ -150,7 +152,7 @@ void command_LS(char **arg) {
 void command_CD(char **path){
 
 	char dir[100];
-	if(**path == '\0'){ redirectionDIR("~", dir); }
+	if(*path == '\0'){ redirectionDIR("~", dir); }
 	else redirectionDIR(*path, dir);
 	chdir(dir);
 
@@ -158,12 +160,52 @@ void command_CD(char **path){
 
 void command_PWD(char **arg){
 
-	if((**arg)!= '\0') redirectionIO(arg[0], arg[1]);
+	if((*arg) != '\0') redirectionIO(arg[0], arg[1]);
 	printf("%s\n", get_current_dir_name());
 
 }
 
-void command_CAT(char **args){
+//CONTINUAR
+void command_CAT(char **arg){
+
+	FILE *f;
+	char *buffer;
+	int len=0;
+	while(arg[len]!='\0'){len++;}
+
+	printf("CAT\n");
+/*
+	//if(len==1){
+		f = fopen(arg[0], "r");
+		while(!feof(f)){
+			fscanf(f, "%s", buffer);
+			printf("%s\n", buffer);
+		}
+		
+		fclose(f);
+	//}
+
+	
+*/
+/*
+	if(len==3){ 
+
+		redirectionIO(arg[1], arg[2]); 
+	}
+	if(len==2){ 
+		redirectionIO(arg[0], arg[1]); 
+
+	}
+
+	if((*arg) != '\0'){
+
+		redirectionIO('<', arg[0]);
+		redirectionIO('>', )
+
+		f = fopen(arg[0], "r");
+		while(!feof(f)){ }
+
+	}*/
 
 }
 
@@ -176,8 +218,8 @@ void command_RNM(char **args) {
 
 	char *origem, *destino;
 	int i=0;
-	//deveria ser args[2], mas da errado
-	if(args[3]!='\0'){ printf("use: rnm <nome_atual_do_arquivo> <novo_nome_do_arquivo>\n"); return; }
+	
+	if(args[2]!='\0'){ printf("use: rnm <nome_atual_do_arquivo> <novo_nome_do_arquivo>\n"); return; }
 
 	origem = args[0];
 	destino = args[1];
@@ -192,7 +234,7 @@ void command_RMV(char **args){
 	char *origem;
 	origem = args[0];
 
-	if(args[2]!='\0'){ printf("use: rmv <nome_do_arquivo>\n"); return; } 
+	if(args[1]!='\0'){ printf("use: rmv <nome_do_arquivo>\n"); return; } 
 
 	if(!remove(origem)){ printf("Arquivo %s removido.\n", origem); }
 	else printf("Erro ao remover arquivo.\n");
@@ -205,7 +247,7 @@ void command_COPY(char **args) {
 	char *origem, *destino;
 	char aux_arquivo[100];
 
-	if(args[3]!='\0'){ printf("Use: cp <nome_do_arquivo> <nome_da_copia>\n"); return; }
+	if(args[2]!='\0'){ printf("Use: cp <nome_do_arquivo> <nome_da_copia>\n"); return; }
 
 	origem = args[0];
 	destino = args[1];
@@ -269,6 +311,8 @@ void readCommand(char *str, char **args){
 		command_CD(*(&args));
 	}else if(!strcmp(str, "pwd")){
 		command_PWD(*(&args));
+	}else if(!strcmp(str, "cat")){
+		command_CAT(*(&args));
 	}else if(!strcmp(str, "exit")){
 		command_EXIT();
 	}else{
@@ -303,14 +347,17 @@ void execCommand(char **argv){
 int main() {
 
 
-	char linhaComando[1024], *argv[64];
+	char *linhaComando, *argv[64];
 
 	while(flag){
 
-		printf("~@~%s > ", get_current_dir_name());
-		fgets(linhaComando, 1014, stdin);
-		parseLine(linhaComando, argv);
-		readCommand(argv[0], &argv[1]);
+		printf("~@~%s >", get_current_dir_name());
+		linhaComando = readline(" ");
+		if(*linhaComando != '\0'){
+			add_history(linhaComando);
+			parseLine(linhaComando, argv);
+			readCommand(argv[0], &argv[1]);
+		}
 
 	}
 
