@@ -45,6 +45,9 @@ void command_PIPE(char *arg){
 
 }
 
+
+//esta função redireciona comandos do terminal ou de um arquivo para outro arquivo.
+//Ela recebe como entrada o comando de redirecionamento e os argumentos.
 void redirectionIO(char *command, char *arg){
 
 	int len = (unsigned)strlen(command);
@@ -90,6 +93,8 @@ void redirectionIO(char *command, char *arg){
 
 }
 
+//esta função muda o diretório corrente para algum outro.
+//Recebe como entrada o diretório informado e uma string que vai receber o nome do diretório.
 void redirectionDIR(char *diretorio, char dir[]){
 
 	//diretorio corrente
@@ -112,6 +117,11 @@ void redirectionDIR(char *diretorio, char dir[]){
 
 }
 
+//esta função exibe o conteúdo de um diretório.
+//Recebe como entrada:
+//1) argumento vazio
+//2) redirecionamento arquivo
+//3) diretório redirecionamento arquivo
 void command_LS(char **arg) {
 
 	char dir[100];
@@ -149,6 +159,8 @@ void command_LS(char **arg) {
 
 }
 
+//entra no diretório desejado
+//Recebe como entrada o caminho para o diretório
 void command_CD(char **path){
 
 	char dir[100];
@@ -158,6 +170,10 @@ void command_CD(char **path){
 
 }
 
+//exibe o diretório corrente
+//Recebe como entrada:
+//1) vazio
+//2) redirecionamento arquivo
 void command_PWD(char **arg){
 
 	if((*arg) != '\0') redirectionIO(arg[0], arg[1]);
@@ -165,6 +181,11 @@ void command_PWD(char **arg){
 
 }
 
+//exibe conteúdo de um arquivo
+//recebe como entrada
+//1) vazio
+//2) redirecionamento arquivo
+//3) arquivo
 //CONTINUAR
 void command_CAT(char **arg){
 
@@ -209,11 +230,14 @@ void command_CAT(char **arg){
 
 }
 
+//sai do novoshell.c
 void command_EXIT() {
 
 	printf("Tchau querida!\n"); exit(0);
 }
 
+//Renomeia um arquivo
+//Recebe como entrada o nome atual do arquivo e o nome novo
 void command_RNM(char **args) {
 
 	char *origem, *destino;
@@ -229,6 +253,8 @@ void command_RNM(char **args) {
 
 }
 
+//remove um arquivo
+//recebe como entrada o nome do arquivo a ser removido
 void command_RMV(char **args){
 	
 	char *origem;
@@ -241,6 +267,8 @@ void command_RMV(char **args){
 	
 }
 
+//copia o conteúdo de um arquivo para outro arquivo.
+//recebe como entrada o nome do arquivo de origem e o do arquivo de destino.
 void command_COPY(char **args) {
 
 	FILE *f1, *f2;
@@ -269,6 +297,8 @@ void command_COPY(char **args) {
 	
 }
 
+//separa uma string com um comando em substrings
+//recebe o comando e seus argumentos, e separa por espaços, \t ou \n
 void parseLine(char *linha, char **argv){
 
     while(*linha != '\0'){      													   
