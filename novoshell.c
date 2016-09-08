@@ -18,7 +18,7 @@
 #define flag 1
 #define WRITE 1
 #define READ 0
-int in, out, n=0;
+int in = STDIN_FILENO, out=STDOUT_FILENO, n=0;
 int saved_stdin, saved_stdout;
 
 //NAO ESTA PRONTO. FALTA COMPLEMENTO COM PIPE
@@ -85,8 +85,7 @@ void redirectionIO(char *command, char *arg){
 	}else if(!strcmp(command, "tee")){
 		command_TEE(arg);
 
-	}else return;
-
+	}
 }
 
 void redirectionDIR(char *diretorio, char dir[]){
@@ -272,13 +271,19 @@ void command_COPY(char **args) {
 
 void parseLine(char *linha, char **argv){
 
-    while(*linha != '\0'){      													   
+    while(*linha != '\0') {      													   
         while (*linha == ' ' || *linha == '\t' || *linha == '\n') {
         	*linha = '\0';
         	++linha;
         }
-        if(*linha!='\0')
+        if(*linha!='\0') {
         	*argv++ = linha;
+        	if (*linha == '"') {
+        		linha++;
+        		while (*linha != '"' && *linha!='\0')
+        			linha++;	
+        	}
+        }
         while (*linha != '\0' && *linha != ' ' && *linha != '\t' && *linha != '\n') {
 			linha++;
         }
@@ -351,24 +356,31 @@ void execCommand(char **argv){
     }
 }
 
-int call_command(int input, int first, int last, char **argv) {
+int call_command(int input, int output, int first, int last, char **argv) {
 	int pipe_vector[2];
 	pid_t pid;
 
 	pipe(pipe_vector);
 	pid = fork();
 
-
 	if (pid==0)	{
-		if (first && !last && input==0) {
+		if (first && !last) {
+			if (input != STDIN_FILENO) {
+				dup2(input, 0);
+				close(input);
+			}
 			dup2(pipe_vector[WRITE], STDOUT_FILENO);
-		} else if (!first && !last && input!=0) {
+		} else if (!first && !last) {
 			dup2(input, STDIN_FILENO);
 			dup2(pipe_vector[WRITE], STDOUT_FILENO);
-		} else if (!first && last && input!=0) {
+		} else if (!first && last) {
 			dup2(input, STDIN_FILENO);
+			if (output != STDOUT_FILENO) {
+				dup2(output, STDOUT_FILENO);
+				close(output);
+			}
 		}
-
+		
 		if (execvp(argv[0], argv) < 0)
 			_exit(EXIT_FAILURE);
 	}
@@ -394,14 +406,38 @@ void cleanup(int n) {
 
 void command_PIPE(char *lineCommand) {
 	char *argv[64];
-	char *command, *next=NULL;
-	int input, first, last;
+	char *command, *next=NULL, *hasRedirectionIn = NULL, *hasRedirectionOut = NULL;
+	int input, output, first, last;
 
 	first = 1;
 	last = 0;
-	input = 0;
+	input = STDIN_FILENO;
+	output = STDOUT_FILENO;
 
 	command = lineCommand;
+
+	// Verifica se ha redirecionamento de entrada ou saida: "<", ">", ">>"
+	hasRedirectionIn = strchr(command, '<');
+	hasRedirectionOut = strchr(command, '>');
+	if (hasRedirectionIn && *(hasRedirectionIn-1) == ' ') {
+		*(hasRedirectionIn-1) = '\0';
+	}
+	if (hasRedirectionOut && *(hasRedirectionOut-1) == ' ') {
+		*(hasRedirectionOut-1) = '\0';
+	}
+
+	
+	// Trata redirecionamento de entrada: "<"
+	if (hasRedirectionIn) {
+		parseLine(hasRedirectionIn,argv);
+		int i;
+		for(i=0;argv[i]!=NULL;i++) {
+			printf("hasRedirectionIn[%d] %s\n", i, argv[i]);
+		}
+		if (!strcmp(argv[0],"<"))
+			input = open(argv[1], O_RDONLY);
+	}
+
 	next = strchr(command, '|');
 
 	while (next != NULL) {
@@ -411,19 +447,38 @@ void command_PIPE(char *lineCommand) {
 			if (!strcmp(argv[0],"exit"))
 				command_EXIT();
 			n+=1;
-			input = call_command(input, first, last, argv);
+			input = call_command(input, output, first, last, argv);
 		}
 		command = next+1;
 		next = strchr(command, '|');
 		first = 0;
 	}
-	last = 1;
+	
+	last = 1; // Ultimo comando do pipe
+
+	// Trata redirecionamento de saida: ">" e ">>"
+	if (hasRedirectionOut) {
+		parseLine(hasRedirectionOut,argv);
+		/*
+		int i;
+		for(i=0;argv[i]!=NULL;i++)
+			printf("hasRedirectionIn[%d] %s\n", i, argv[i]);
+		*/
+		if (!strcmp(argv[0],">")) {
+			output = open(argv[1], O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IRGRP | S_IWGRP | S_IWUSR);
+		} else if (!strcmp(argv[0],">>")) {
+			output = open(argv[1], O_WRONLY | O_CREAT | O_APPEND, 0666);
+			lseek(output, 0, SEEK_END);
+		}
+	}
+
+
 	parseLine(command, argv);
 	if (argv[0] != NULL) {
 		if (!strcmp(argv[0],"exit"))
 			command_EXIT();
 		n+=1;
-		input = call_command(input, first, last,argv);
+		input = call_command(input, output, first, last,argv);
 	}
 }
 
@@ -436,6 +491,7 @@ int main() {
 
 		printf("~@~%s >", get_current_dir_name());
 		linhaComando = readline(" ");
+		add_history(linhaComando);
 
 		hasPipe = strchr(linhaComando, '|');
 
@@ -444,9 +500,7 @@ int main() {
 			cleanup(n);
 			n=0;
 		} else if(*linhaComando != '\0'){
-			add_history(linhaComando);
 			parseLine(linhaComando, argv);
-			int i;
  			readCommand(argv[0], &argv[1]);
 		}
 
