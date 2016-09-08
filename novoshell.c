@@ -322,6 +322,8 @@ void parseLine(char *linha, char **argv){
 
 */
 
+//lê um comando e chama a função correspondente
+//recebe o comando (e seus argumentos, quando existentes)
 void readCommand(char *str, char **args){
 
 	// str = comando
@@ -355,7 +357,8 @@ void readCommand(char *str, char **args){
 	close(saved_stdout);
 	
 }
-     
+
+//cria um processo filho para o comando     
 void execCommand(char **argv){
 
 	int status;
