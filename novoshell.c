@@ -21,27 +21,47 @@
 int in = STDIN_FILENO, out=STDOUT_FILENO, n=0;
 int saved_stdin, saved_stdout;
 
-//NAO ESTA PRONTO. FALTA COMPLEMENTO COM PIPE
-void command_TEE(char *arg){
+// Tee para chamada sem pipe
+void command_TEE(int input, char **argv){
+	int i;
+	int file;
+	FILE *f1, *f2;
+	char *firstFile, aux_arquivo[100];
 
-	int fd, len, slen;
+	if (*argv ==NULL)
+		return;
 
-    fd = open(arg, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IRGRP | S_IWGRP | S_IWUSR);
-    if(fd == -1) { perror("open"); exit(EXIT_FAILURE); }
- 
-   	len = tee(STDIN_FILENO, STDOUT_FILENO, INT_MAX, SPLICE_F_NONBLOCK);
-/*
-   	if (len < 0){
-        if(errno == EAGAIN) continue;
-        perror("tee");
-        exit(EXIT_FAILURE);
-    }else if(len == 0) break;
-*/
-   	printf("%d\n", len);
+	firstFile = *argv;
+	argv++;
 
-  	while(len > 0){ slen = splice(STDOUT_FILENO, NULL, fd, NULL, len, SPLICE_F_MOVE); len -= slen; } 
-	close(fd);
+	if (input == STDIN_FILENO) {
+		f1 = fopen(firstFile,"w");
+		if(f1==NULL){ printf("Erro!\n"); return; }
+		do {
+			fgets(aux_arquivo, 100, stdin);
+			if (strcmp(aux_arquivo,"end\n") != 0) {
+				printf("%s", aux_arquivo);
+				fputs(aux_arquivo, f1);
+			}
+		} while(strcmp(aux_arquivo,"end\n") != 0);	
+		fclose(f1);
+	}
 
+	f1 = fopen(firstFile,"r");
+	if(f1==NULL){ printf("Erro!\n"); return; }
+	for (i=0;argv[i] != NULL;i++) {
+		f2 = fopen(argv[i],"w");
+		if(f2==NULL){ printf("Erro!\n"); return; }
+
+		while(!feof(f1)) {
+			fgets(aux_arquivo, 100, f1);
+			if (!feof(f1))
+				fputs(aux_arquivo, f2);
+		}
+		fclose(f2);
+		rewind(f1);
+	}
+	fclose(f1);
 }
 
 void redirectionIO(char *command, char *arg){
@@ -63,11 +83,6 @@ void redirectionIO(char *command, char *arg){
 			dup2(out, 1);
 			close(out);
 		break;
-		//pipeline
-		case '|':
-			//command_PIPE(arg);
-		break;
-		}
 
 	//arquivo saida. Se existir, adiciona no final arquivo
 	}else if(!strcmp(command, ">>")){
@@ -82,9 +97,6 @@ void redirectionIO(char *command, char *arg){
 		//ainda nao sei como
 
 	//saida padrao e arquivo
-	}else if(!strcmp(command, "tee")){
-		command_TEE(arg);
-
 	}
 }
 
@@ -327,6 +339,8 @@ void readCommand(char *str, char **args){
 		command_CAT(*(&args));
 	}else if(!strcmp(str, "exit")){
 		command_EXIT();
+	}else if(!strcmp(str, "tee")){
+		command_TEE(STDIN_FILENO, args);
 	}else{
 		printf("Comando não existe\n");
 	}
@@ -430,10 +444,6 @@ void command_PIPE(char *lineCommand) {
 	// Trata redirecionamento de entrada: "<"
 	if (hasRedirectionIn) {
 		parseLine(hasRedirectionIn,argv);
-		int i;
-		for(i=0;argv[i]!=NULL;i++) {
-			printf("hasRedirectionIn[%d] %s\n", i, argv[i]);
-		}
 		if (!strcmp(argv[0],"<"))
 			input = open(argv[1], O_RDONLY);
 	}
@@ -502,6 +512,10 @@ int main() {
 		} else if(*linhaComando != '\0'){
 			parseLine(linhaComando, argv);
  			readCommand(argv[0], &argv[1]);
+ 			/*int i;
+ 			for(i=0;argv[i]!=NULL;i++) {
+ 				printf("argv[%d]: %s\n", i, argv[i]);
+ 			}*/
 		}
 
 	}
