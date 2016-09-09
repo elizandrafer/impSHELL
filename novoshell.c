@@ -64,39 +64,76 @@ void command_TEE(int input, char **argv){
 	fclose(f1);
 }
 
-void redirectionIO(char *command, char *arg){
+void redirectionIO(char *command, char **argv){
 
 	int len = (unsigned)strlen(command);
 
 	if(len==1){
 
 		switch(*command){
-		//arquivo entrada
-		case '<':
-			in = open(arg, O_RDONLY);
-			dup2(in, 0);
-			close(in);
-		break;
-		//arquivo saida
-		case '>':
-			out = open(arg, O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IRGRP | S_IWGRP | S_IWUSR);
-			dup2(out, 1);
-			close(out);
-		break;
+			//arquivo entrada
+			case '<':
+				in = open(argv[0], O_RDONLY);
+				dup2(in, 0);
+				close(in);
+			break;
+			//arquivo saida
+			case '>':
+				out = open(argv[0], O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IRGRP | S_IWGRP | S_IWUSR);
+				dup2(out, 1);
+				close(out);
+			break;
+		}
 
 	//arquivo saida. Se existir, adiciona no final arquivo
-	}else if(!strcmp(command, ">>")){
+	} else if(!strcmp(command, ">>")){
 	
-		out = open(arg, O_WRONLY | O_CREAT | O_APPEND, 0666);
+		out = open(argv[0], O_WRONLY | O_CREAT | O_APPEND, 0666);
 		lseek(out, 0, SEEK_END);
 		dup2(out, 1);
 		close(out);
 	
 	//arquivo entrada. Le até palavraX
+	//	<< arquivo palavra
 	}else if(!strcmp(command, "<<")){
-		//ainda nao sei como
+		char buffer[512];
+		int line = 1, encontrou = 0;
+		int i;
 
-	//saida padrao e arquivo
+		buffer[0] = '\0';
+		in = open(argv[0], O_RDONLY);
+		if (in < 0)
+			return;
+
+		i=0;
+		while (read(in, &buffer[i], 1) == 1 && i<=512) {
+		    if (buffer[i] == '\n' || buffer[i] == 0x0/* null caracter*/) {
+		        buffer[i] = 0;
+		        if (!strncmp(buffer, argv[1], strlen(argv[1]))) {
+		        	encontrou = 1;
+		            break;
+		        }
+		        i = 0;
+		        line++;
+		        continue;
+		    }
+		    if (i==512) {
+				i = 0;
+			}
+		    i++;
+		}
+
+		lseek(in,0,SEEK_SET);
+
+		if (encontrou) {
+			//redirecionar a entrada para conteudo do arquivo ate linha tal
+			//Como fazer?
+			printf("Encontrou %s na linha %d\n", argv[1], line);
+		} else {
+			// redirecionar a entrada para todo o conteudo do arquivo
+			dup2(in, 0);
+			close(in);
+		}
 	}
 }
 
@@ -135,15 +172,17 @@ void command_LS(char **arg) {
 	}
  
 	switch(len){
-		case 3: 
-			redirectionIO(arg[1], arg[2]);
-			redirectionDIR(arg[0], dir);
+		case 3:  // "ls dir > arq", "ls dir < arq" (invalido), "ls dir >> arq", "ls << arq palavra" (invalido)
+			if (strcmp(arg[0],"<<") != 0) {
+				redirectionIO(arg[1], arg+2);
+				redirectionDIR(arg[0], dir);
+			}
 		break;
-		case 2:
-			redirectionIO(arg[0], arg[1]);
+		case 2: // "ls > arq", "ls < arq" ou "ls >> arq"
+			redirectionIO(arg[0], arg+1);
 			redirectionDIR("./", dir);
 		break;
-		default:
+		default: // "ls"
 			redirectionDIR(arg[0], dir);
 		break;
 	}
@@ -172,7 +211,7 @@ void command_CD(char **path){
 
 void command_PWD(char **arg){
 
-	if((*arg) != NULL) redirectionIO(arg[0], arg[1]);
+	if((*arg) != NULL) redirectionIO(arg[0], arg+1);
 	printf("%s\n", get_current_dir_name());
 
 }
@@ -202,16 +241,16 @@ void command_CAT(char **arg){
 /*
 	if(len==3){ 
 
-		redirectionIO(arg[1], arg[2]); 
+		redirectionIO(arg[1], arg+2); 
 	}
 	if(len==2){ 
-		redirectionIO(arg[0], arg[1]); 
+		redirectionIO(arg[0], arg+1); 
 
 	}
 
 	if((*arg) != '\0'){
 
-		redirectionIO('<', arg[0]);
+		redirectionIO('<', arg);
 		redirectionIO('>', )
 
 		f = fopen(arg[0], "r");
@@ -222,7 +261,7 @@ void command_CAT(char **arg){
 }
 
 void command_EXIT() {
-	printf("Tchau, querida!\n"); 
+	printf("Tchau!\n"); 
 	exit(0);
 }
 
